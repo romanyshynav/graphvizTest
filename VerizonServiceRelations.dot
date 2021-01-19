@@ -1,0 +1,291 @@
+digraph G {
+    // See file "README.md -> Graph structure and How to work with code"
+    
+    rankdir=LR;
+    
+    // Block-1: Variables.
+    
+    // Service
+    node [style = "filled,rounded", shape = "Mdiamond", color = "honeydew4",  
+    fillcolor = "honeydew", penwidth = "4", fontname = "helvetica"]
+    gpService ciService scriptExecutor cryptoService kcssService deviceGateway
+    campaignOrhestrator contentService userService eventSheduler bootstrap messagingWall
+    
+    // deviceGateway -> SQS
+    node [xlabel = "SQS", shape = "oval", color = "chartreuse4", fillcolor = "chartreuse1"]
+    uiccSQS [label = "uicc"] se_device_info   
+    
+    // gpService -> Topics
+    node [xlabel= "SNS", shape = "box", color = "darkorange4", fillcolor = "darkorange"]
+    ci_commands command_events supported_commands cryptographic_commands
+    // ciService -> Topics
+    ci_events
+    // scriptExecutor -> Topics
+    device_commands gp_commands kcss_commands script_events
+    // cryptoService -> Topics
+    cryptographic_events gp_cryptographic_events secure_messaging_events
+    // kcssService -> Topics !!!AvoidDuplicates!!!
+    ci_commands_ [label = "ci_commands"] command_events_ [label = "command_events"]
+    supported_commands_ [label = "supported_commands"] 
+    cryptographic_commands_ [label = "cryptographic_commands"] crypto_service_events
+    // deviceGateway -> Topics !!!AvoidDuplicates!!!
+    cryptographic_commands__ [label = "cryptographic_commands"] device_events 
+    bootstrap_events uicc
+    // campaignOrhestrator -> Topics
+    campaign_events campaign_commands scheduled_events script_commands
+    // contentService -> Topics !!!AvoidDuplicates!!!
+    user_events campaign_commands_ [label = "campaign_commands"]
+    // userService -> Topics
+    user_commands
+
+    // gpService -> Events
+    node [xlabel = "",color = "red", fillcolor = "peachpuff1"]
+    SIGN_DATA_COMMAND SIGN_CERTIFICATE_COMMAND PREPARED_COMMAND UPDATE_COMMANDS 
+    SUPPORTED_COMMANDS START_SCP_SESSION_COMMAND
+    // ciService -> Events
+    node [color = "blueviolet"]
+    SIGN_CERTIFICATE_EVENT SIGN_DATA_EVENT
+    // scriptExecutor -> Events
+    node [color = "orange"]
+    EXECUTE_COMMAND OPEN_CHANNEL CLOSE_CHANNEL GP_COMMAND KCSS_COMMAND 
+    SCRIPT_EXECUTION_EVENT
+    // cryptoService -> Events
+    node [color = "blue"]
+    GENERATE_EXTENDED_MAC_EVENT GENERATE_MAC_EVENT GENERATE_SESSION_KEYS_EVENT 
+    DECRYPT_EVENT ENCRYPT_EVENT GENERATE_SCP02_SESSION_DATA_EVENT WRAP_SECURE_APDU_EVENT
+    UNWRAP_SE_RESPONSE_EVENT
+    // kcssService -> Events !!!AvoidDuplicates!!!
+    node [color = "yellow"]
+    SIGN_DATA_COMMAND_ [label = "SIGN_DATA_COMMAND"] 
+    SIGN_CERTIFICATE_COMMAND_ [label = "SIGN_CERTIFICATE_COMMAND"] 
+    PREPARED_COMMAND_ [label = "PREPARED_COMMAND"] 
+    UPDATE_COMMANDS_ [label = "UPDATE_COMMANDS"]
+    SUPPORTED_COMMANDS_ [label = "SUPPORTED_COMMANDS"]
+    GENERATE_EXTENDED_MAC_COMMAND GENERATE_MAC_COMMAND USER_KEYS_EVENT
+    CHANGE_KEY_EVENT SESSION_START_EVENT
+    // deviceGateway -> Events
+    node [color = "green"]
+    WRAP_SECURE_APDU_COMMAND UNWRAP_SE_RESPONSE_COMMAND COMMAND_EXECUTED 
+    GENERATE_DEVICE_CONFIG NEW_UICC_EVENT UPDATE_DEVICE_INFO_EVENT UPDATE_UICC_EVENT
+    // campaignOrhestrator -> Events
+    node [color = "cyan"]
+    CAMPAIGN_EXECUTION_FINISHED SCRIPT_EXECUTION_UPDATE STOP_CAMPAIGN 
+    FORCE_STOP_CAMPAIGN SCHEDULED_EVENTS START_SCRIPT STOP_SCRIPT
+    // contentService -> Events
+    node [color = "black"]
+    RESULT_VALIDATE_COMMANDS START_CAMPAIGN
+    // userService -> Events
+    node [color = "darkorange4"]
+    ASSIGN_USER_TO_UICCS ASSIGN_VENDOR_TO_UICCS VALIDATE_COMMANDS
+    
+    
+    // Block-2: Relations like "Service -> Topic (SNS) -> Event"
+    
+edge [arrowhead = "vee", color = "honeydew4", penwidth = "5"]
+subgraph cluster_1 {style="filled" color="lightgrey"
+  gpService -> {ci_commands command_events supported_commands cryptographic_commands}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_1_1 {color="wheat1"
+            ci_commands -> {SIGN_DATA_COMMAND SIGN_CERTIFICATE_COMMAND}
+        }
+        subgraph cluster_1_2 {color="wheat2"
+            command_events -> {PREPARED_COMMAND UPDATE_COMMANDS}
+        }
+        subgraph cluster_1_3 {color="wheat3"
+            supported_commands -> SUPPORTED_COMMANDS
+        }
+        subgraph cluster_1_4 {color="wheat4"
+            cryptographic_commands -> START_SCP_SESSION_COMMAND
+        }
+}
+
+subgraph cluster_2 {style="filled" color="lightgrey"
+ciService -> ci_events
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_2_1 {color="wheat1"
+        ci_events -> {SIGN_CERTIFICATE_EVENT SIGN_DATA_EVENT}
+        }
+}
+
+subgraph cluster_3 {style="filled" color="lightgrey"
+        subgraph cluster_3_0 {color="orangered"
+            se_device_info -> {scriptExecutor} [color=chartreuse4]
+        }
+scriptExecutor -> {device_commands gp_commands kcss_commands script_events}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_3_1 {color="wheat1"
+            device_commands -> {EXECUTE_COMMAND OPEN_CHANNEL CLOSE_CHANNEL}
+        }
+        subgraph cluster_3_2 {color="wheat2"
+            gp_commands -> {GP_COMMAND}
+        }
+        subgraph cluster_3_3 {color="wheat3"
+            kcss_commands -> {KCSS_COMMAND}
+        }
+        subgraph cluster_3_4 {color="wheat4"
+            script_events -> {SCRIPT_EXECUTION_EVENT}
+        }
+}
+
+subgraph cluster_4 {style="filled" color="lightgrey"
+cryptoService -> {cryptographic_events gp_cryptographic_events secure_messaging_events}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_4_1 {color="wheat1"
+            cryptographic_events -> {GENERATE_EXTENDED_MAC_EVENT GENERATE_MAC_EVENT 
+            GENERATE_SESSION_KEYS_EVENT DECRYPT_EVENT ENCRYPT_EVENT}
+        }
+        subgraph cluster_4_2 {color="wheat2"
+            gp_cryptographic_events -> {GENERATE_SCP02_SESSION_DATA_EVENT}
+        }
+        subgraph cluster_4_3 {color="wheat3"
+            secure_messaging_events -> {WRAP_SECURE_APDU_EVENT UNWRAP_SE_RESPONSE_EVENT}
+        }
+}
+
+subgraph cluster_5 {style="filled" color="lightgrey"
+kcssService -> {ci_commands_ command_events_ supported_commands_ cryptographic_commands_ 
+crypto_service_events}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_5_1 {color="wheat1"
+            ci_commands_ -> {SIGN_DATA_COMMAND_ SIGN_CERTIFICATE_COMMAND_}
+        }
+        subgraph cluster_5_2 {color="wheat2"
+            command_events_ -> {PREPARED_COMMAND_ UPDATE_COMMANDS_}
+        }
+        subgraph cluster_5_3 {color="wheat3"
+            supported_commands_ -> SUPPORTED_COMMANDS_
+        }        
+        subgraph cluster_5_4 {color="wheat4"
+            cryptographic_commands_ -> {GENERATE_EXTENDED_MAC_COMMAND GENERATE_MAC_COMMAND}
+        }
+        subgraph cluster_5_5 {color="wheat1"
+            crypto_service_events -> {USER_KEYS_EVENT CHANGE_KEY_EVENT SESSION_START_EVENT}
+        }
+}
+
+subgraph cluster_6 {style="filled" color="lightgrey"
+deviceGateway -> {cryptographic_commands__ device_events bootstrap_events uicc}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_6_1 {color="wheat1"
+            cryptographic_commands__ -> {WRAP_SECURE_APDU_COMMAND UNWRAP_SE_RESPONSE_COMMAND}
+        }
+        subgraph cluster_6_2 {color="wheat2"
+            device_events -> {COMMAND_EXECUTED}
+        }
+        subgraph cluster_6_3 {color="wheat3"
+            bootstrap_events -> {GENERATE_DEVICE_CONFIG}
+        }
+        subgraph cluster_6_4 {color="wheat4"
+            uicc -> {NEW_UICC_EVENT UPDATE_DEVICE_INFO_EVENT UPDATE_UICC_EVENT}
+        }
+}
+
+subgraph cluster_7 {style="filled" color="lightgrey"
+campaignOrhestrator -> {campaign_events campaign_commands scheduled_events script_commands}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_7_1 {color="wheat1"
+            campaign_events -> {CAMPAIGN_EXECUTION_FINISHED SCRIPT_EXECUTION_UPDATE}
+        }
+        subgraph cluster_7_2 {color="wheat2"
+            campaign_commands -> {STOP_CAMPAIGN FORCE_STOP_CAMPAIGN}
+        }
+        subgraph cluster_7_3 {color="wheat3"
+            scheduled_events -> SCHEDULED_EVENTS
+        }
+        subgraph cluster_7_4 {color="wheat4"
+            script_commands -> {START_SCRIPT STOP_SCRIPT}
+        }
+ }
+
+subgraph cluster_8 {style="filled" color="lightgrey"
+        subgraph cluster_8_0 {color="orangered"
+            uiccSQS -> {contentService} [color=chartreuse4]
+        }
+contentService -> {user_events campaign_commands_}
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_8_1 {color="wheat1"
+            user_events -> {RESULT_VALIDATE_COMMANDS}
+        }
+        subgraph cluster_8_2 {color="wheat2"
+            campaign_commands_ -> {START_CAMPAIGN}
+        }
+}
+
+subgraph cluster_9 {style="filled" color="lightgrey"
+userService -> user_commands
+        edge [style="bold",color="darkorange4", penwidth = "3"]
+        subgraph cluster_9_1 {color="wheat1"
+        user_commands -> {ASSIGN_USER_TO_UICCS ASSIGN_VENDOR_TO_UICCS VALIDATE_COMMANDS}
+        }
+}
+
+    // Block-3: Relations like "Event -> Services"
+
+// gpService
+edge [style=bold,color = "red", penwidth = "3"]
+SIGN_DATA_COMMAND -> ciService
+SIGN_CERTIFICATE_COMMAND -> ciService
+PREPARED_COMMAND -> scriptExecutor
+UPDATE_COMMANDS -> scriptExecutor
+SUPPORTED_COMMANDS -> contentService
+START_SCP_SESSION_COMMAND -> cryptoService
+// ciService
+edge [color = "blueviolet"]
+SIGN_CERTIFICATE_EVENT -> {gpService kcssService}
+SIGN_DATA_EVENT -> {gpService kcssService}
+// scriptExecutor
+edge [color = "orange"]
+EXECUTE_COMMAND -> deviceGateway
+OPEN_CHANNEL -> deviceGateway
+CLOSE_CHANNEL -> deviceGateway
+GP_COMMAND -> gpService
+KCSS_COMMAND -> kcssService
+SCRIPT_EXECUTION_EVENT -> campaignOrhestrator
+// cryptoService
+edge [color = "blue"]
+GENERATE_EXTENDED_MAC_EVENT -> kcssService
+GENERATE_MAC_EVENT -> kcssService
+GENERATE_SESSION_KEYS_EVENT -> kcssService
+GENERATE_SCP02_SESSION_DATA_EVENT -> gpService
+WRAP_SECURE_APDU_EVENT -> deviceGateway
+UNWRAP_SE_RESPONSE_EVENT -> deviceGateway
+// kcssService
+edge [color = "yellow"]
+SIGN_DATA_COMMAND_ -> ciService
+SIGN_CERTIFICATE_COMMAND_ -> ciService
+PREPARED_COMMAND_ -> scriptExecutor
+UPDATE_COMMANDS_ -> scriptExecutor
+SUPPORTED_COMMANDS_ -> contentService
+GENERATE_EXTENDED_MAC_COMMAND -> cryptoService
+GENERATE_MAC_COMMAND -> cryptoService
+USER_KEYS_EVENT -> cryptoService
+CHANGE_KEY_EVENT -> cryptoService
+SESSION_START_EVENT -> cryptoService
+// deviceGateway
+edge [color = "green"]
+WRAP_SECURE_APDU_COMMAND -> cryptoService
+UNWRAP_SE_RESPONSE_COMMAND -> cryptoService
+COMMAND_EXECUTED -> {deviceGateway scriptExecutor messagingWall}
+GENERATE_DEVICE_CONFIG -> bootstrap
+NEW_UICC_EVENT -> {se_device_info uiccSQS}
+UPDATE_DEVICE_INFO_EVENT -> {se_device_info uiccSQS}
+UPDATE_UICC_EVENT -> {se_device_info uiccSQS}
+// campaignOrhestrator
+edge [color = "cyan"]
+CAMPAIGN_EXECUTION_FINISHED -> contentService
+SCRIPT_EXECUTION_UPDATE -> contentService
+STOP_CAMPAIGN -> campaignOrhestrator
+FORCE_STOP_CAMPAIGN -> campaignOrhestrator
+SCHEDULED_EVENTS -> eventSheduler
+START_SCRIPT -> {scriptExecutor messagingWall}
+STOP_SCRIPT -> {scriptExecutor messagingWall}
+// contentService
+edge [color = "black"]
+RESULT_VALIDATE_COMMANDS -> userService
+START_CAMPAIGN -> {campaignOrhestrator messagingWall}
+// userService
+edge [color = "darkorange4"]
+ASSIGN_USER_TO_UICCS -> contentService
+ASSIGN_VENDOR_TO_UICCS -> contentService
+VALIDATE_COMMANDS -> contentService
+}
